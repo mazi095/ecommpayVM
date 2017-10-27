@@ -1,0 +1,62 @@
+version: '2'
+
+## Networking
+###############################################################################
+
+
+## Volumes
+###############################################################################
+volumes:
+    mysql: ~
+
+## Services
+###############################################################################
+services:
+  app:
+    build:
+      context: ./docker/back
+      dockerfile: Dockerfile
+      args:
+          useruid: "${UID}"
+    hostname: "ecommpayVM"
+    expose:
+        - "9000"
+    volumes:
+        - "./back:/var/www"
+        - "${HOME}/.composer:/home/app/.composer"
+        - "${HOME}/.gitconfig:/home/app/.gitconfig:ro"
+        - "${HOME}/.ssh/config:/home/app/.ssh/config:ro"
+        - "${HOME}/.ssh/known_hosts:/home/app/.ssh/known_hosts"
+        - "${HOME}/${SSH_KEY}:/home/app/${SSH_KEY}:ro"
+        - "./docker/back/php_fpm.ini:/etc/php/7.0/fpm/php.ini:ro"
+        - "./docker/back/php_cli.ini:/etc/php/7.0/cli/php.ini:ro"
+        - "./docker/back/supervisord.conf:/etc/supervisor/conf.d/supervisord.conf:ro"
+        - "./docker/back/fpm_pool.conf:/etc/php/7.0/fpm/pool.d/www.conf:ro"
+        - "./docker/back/.zshrc:/home/app/.zshrc"
+        - "./docker/back/.history:/home/app/.history"
+    environment:
+        - XDEBUG_CONFIG
+
+  web:
+    build:
+        context: ./docker/front
+        dockerfile: Dockerfile
+    ports:
+        - "${EXTERNAL_PORT}:80"
+        - "8080:8080"
+    volumes:
+        - ".:/var/www"
+        - "./docker/front/nginx.conf:/etc/nginx/conf.d/default.conf:ro"
+        - "./docker/front/supervisord.conf:/etc/supervisor/conf.d/supervisord.conf:ro"
+        - "./docker/front/nginx:/var/log/nginx"
+    links:
+        - app
+
+  mysql:
+    image: mysql:5.6.25
+    environment:
+        - MYSQL_ALLOW_EMPTY_PASSWORD=yes
+    volumes:
+        - "mysql:/var/lib/mysql:z"
+    ports:
+        - "${EXTERNAL_MYSQL_PORT}:3306"
