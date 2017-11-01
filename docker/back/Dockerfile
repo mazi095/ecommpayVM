@@ -58,6 +58,13 @@ ARG useruid
 RUN groupadd --gid $useruid app && useradd --create-home --uid $useruid --gid $useruid --shell /bin/zsh app && mkdir /home/app/.ssh && touch /home/app/.ssh/config && chown -R $useruid:$useruid /home/app/.ssh
 RUN cd /home/app && su -c "$(curl -fsSL https://raw.githubusercontent.com/robbyrussell/oh-my-zsh/master/tools/install.sh)" app
 
+### Install ssh
+RUN apt-get update && apt-get install -y openssh-server \
+    && echo 'app:app' | chpasswd \
+    && sed -i 's/PermitRootLogin without-password/PermitRootLogin yes/' /etc/ssh/sshd_config \
+    && sed 's@session\s*required\s*pam_loginuid.so@session optional pam_loginuid.so@g' -i /etc/pam.d/sshd \
+    && echo "export VISIBLE=now" >> /etc/profiler
+
 WORKDIR /var/www
 
 CMD ["/usr/bin/supervisord"]

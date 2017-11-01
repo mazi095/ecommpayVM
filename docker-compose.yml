@@ -21,6 +21,8 @@ services:
     hostname: "ecommpayVM"
     expose:
         - "9000"
+    ports:
+      - "49154:22"
     volumes:
         - "./back:/var/www"
         - "${HOME}/.composer:/home/app/.composer"
